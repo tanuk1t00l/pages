@@ -14,7 +14,8 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .nav-titlebar{display:flex;align-items:center;justify-content:space-between;padding:5px 6px 5px 8px;cursor:grab;background:transparent;border-bottom:0.5px solid rgba(0,0,0,0.07)}
 .nav-titlebar:active{cursor:grabbing}
 .nav-grip{color:#ccc;font-size:13px;pointer-events:none}
-.nav-body{display:flex;flex-direction:column;gap:1px;padding:4px 6px}
+.nav-body{display:flex;flex-direction:column;gap:1px;padding:4px 6px;overflow:hidden;transition:max-height 0.2s ease,padding 0.2s ease;max-height:600px}
+.nav-body.collapsed{max-height:0;padding-top:0;padding-bottom:0}
 .nav-item{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:8px;border:none;background:transparent;color:#666;font-size:13px;cursor:pointer;white-space:nowrap;text-decoration:none;transition:background 0.15s,color 0.15s;font-family:inherit;width:100%;text-align:left}
 .nav-item:hover,.nav-item.active{background:#f0f0ee;color:#1a1a1a}
 .nav-item .drag-handle{font-size:12px;color:#ccc;cursor:grab;flex-shrink:0;display:none}
@@ -103,6 +104,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
   <div class="nav-panel" id="navPanel">
     <div class="nav-titlebar" id="navTitlebar">
       <i class="ti ti-grip-horizontal nav-grip"></i>
+      <button id="navCollapseBtn" style="border:none;background:transparent;cursor:pointer;color:#ccc;font-size:13px;padding:0 2px;line-height:1;pointer-events:all" title="접기/펼치기"><i class="ti ti-chevron-up"></i></button>
     </div>
     <div class="nav-body" id="navBody"></div>
   </div>
@@ -146,8 +148,10 @@ const DEFAULT_LINKS = [
 let links = JSON.parse(localStorage.getItem('lp_links') || 'null') || DEFAULT_LINKS;
 let nextId = Math.max(10, ...links.map(l=>l.id+1));
 let isEditing=false, isLocked=false, activeId=null;
+let isCollapsed = localStorage.getItem('lp_collapsed') === '1';
 function saveLinks(){ localStorage.setItem('lp_links', JSON.stringify(links)); }
 function savePos(x,y){ localStorage.setItem('lp_pos', JSON.stringify({x,y})); }
+function saveCollapsed(){ localStorage.setItem('lp_collapsed', isCollapsed?'1':'0'); }
 let cardDragSrc=null, navDragSrc=null;
 
 const cardsContainer=document.getElementById('cardsContainer');
@@ -303,6 +307,12 @@ function renderNav(){
   if(isEditing&&!isLocked) navBody.classList.add('editing-nav');
   else navBody.classList.remove('editing-nav');
 
+  // 접힘 상태 적용
+  if(isCollapsed) navBody.classList.add('collapsed');
+  else navBody.classList.remove('collapsed');
+  const colBtn=document.getElementById('navCollapseBtn');
+  if(colBtn) colBtn.innerHTML=isCollapsed?'<i class="ti ti-chevron-down"></i>':'<i class="ti ti-chevron-up"></i>';
+
   navAddBtn.style.display=(!isLocked&&isEditing)?'':'none';
   navEditBtn.style.display=isLocked?'none':'';
   navEditBtn.innerHTML=isEditing?'<i class="ti ti-check"></i>':'<i class="ti ti-adjustments-horizontal"></i>';
@@ -346,6 +356,12 @@ function render(){renderCards();renderNav();saveLinks();}
 navEditBtn.onclick=()=>{if(isLocked)return;isEditing=!isEditing;if(isEditing)goHome();render();};
 navLockBtn.onclick=()=>{isLocked=!isLocked;if(isLocked)isEditing=false;render();};
 navAddBtn.onclick=()=>{inputName.value='';inputUrl.value='';modalBg.classList.add('open');inputName.focus();};
+document.getElementById('navCollapseBtn').onclick=e=>{
+  e.stopPropagation();
+  isCollapsed=!isCollapsed;
+  saveCollapsed();
+  renderNav();
+};
 document.getElementById('btnCancel').onclick=()=>modalBg.classList.remove('open');
 modalBg.onclick=e=>{if(e.target===modalBg)modalBg.classList.remove('open');};
 document.getElementById('btnConfirm').onclick=()=>{
