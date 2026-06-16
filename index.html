@@ -216,8 +216,9 @@ document.addEventListener('touchmove', e=>{
 document.addEventListener('touchend', ()=>{ panelDragging=false; });
 
 // ── 링크 열기 / 홈 ───────────────────────────────────
-function openLink(lk){
+function openLink(lk, newTab){
   if(isEditing) return;
+  if(newTab){ window.open(lk.url,'_blank'); return; }
   activeId=lk.id;
   mainFrame.src=lk.url;
   iframeView.classList.add('open');
@@ -255,7 +256,7 @@ function renderNav(){
     } else {
       btn.textContent=lk.name;
     }
-    btn.onclick=e=>{ if(e.target.closest('.drag-handle')) return; openLink(lk); };
+    btn.onclick=e=>{ if(e.target.closest('.drag-handle')) return; openLink(lk, e.ctrlKey||e.metaKey); };
 
     btn.addEventListener('dragstart',e=>{
       navDragSrc=idx;
@@ -316,7 +317,7 @@ function renderCards(){
         <button class="move-down" data-i="${idx}"><i class="ti ti-chevron-down"></i></button>
         <button class="del-btn" data-i="${idx}"><i class="ti ti-trash"></i></button>
       </div>`;
-    if(!isEditing) card.onclick=()=>openLink(lk);
+    if(!isEditing) card.onclick=e=>openLink(lk, e.ctrlKey||e.metaKey);
     card.addEventListener('dragstart',e=>{cardDragSrc=idx;card.classList.add('card-dragging');e.dataTransfer.effectAllowed='move';});
     card.addEventListener('dragend',()=>{card.classList.remove('card-dragging');cardsContainer.querySelectorAll('.card-drag-over').forEach(el=>el.classList.remove('card-drag-over'));});
     card.addEventListener('dragover',e=>{e.preventDefault();card.classList.add('card-drag-over');});
