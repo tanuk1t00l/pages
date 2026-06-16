@@ -137,13 +137,17 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 </div>
 
 <script>
-let links = [
+const DEFAULT_LINKS = [
   {id:1, name:'엑셀 여러 시트 합치기', url:'https://tanuk1t00l.github.io/combiner/'},
   {id:2, name:'엑셀 통파일 합치기', url:'https://tanuk1t00l.github.io/merger/'},
   {id:3, name:'이번 주 근무시간', url:'https://tanuk1t00l.github.io/workhour/'},
   {id:4, name:'검수 스케줄러', url:'https://tanuk1t00l.github.io/scheduler/'},
 ];
-let nextId=10, isEditing=false, isLocked=false, activeId=null;
+let links = JSON.parse(localStorage.getItem('lp_links') || 'null') || DEFAULT_LINKS;
+let nextId = Math.max(10, ...links.map(l=>l.id+1));
+let isEditing=false, isLocked=false, activeId=null;
+function saveLinks(){ localStorage.setItem('lp_links', JSON.stringify(links)); }
+function savePos(x,y){ localStorage.setItem('lp_pos', JSON.stringify({x,y})); }
 let cardDragSrc=null, navDragSrc=null;
 
 const cardsContainer=document.getElementById('cardsContainer');
@@ -186,7 +190,10 @@ document.addEventListener('mousemove', e=>{
   navWrap.style.top=y+'px';
 });
 
-document.addEventListener('mouseup', ()=>{ panelDragging=false; });
+document.addEventListener('mouseup', ()=>{
+  if(panelDragging) savePos(parseInt(navWrap.style.left),parseInt(navWrap.style.top));
+  panelDragging=false;
+});
 
 // 터치 지원
 navTitlebar.addEventListener('touchstart', e=>{
@@ -213,7 +220,10 @@ document.addEventListener('touchmove', e=>{
   e.preventDefault();
 },{passive:false});
 
-document.addEventListener('touchend', ()=>{ panelDragging=false; });
+document.addEventListener('touchend', ()=>{
+  if(panelDragging) savePos(parseInt(navWrap.style.left),parseInt(navWrap.style.top));
+  panelDragging=false;
+});
 
 // ── 링크 열기 / 홈 ───────────────────────────────────
 function openLink(lk, newTab){
@@ -331,7 +341,7 @@ function renderCards(){
   if(isEditing) homeView.classList.add('editing'); else homeView.classList.remove('editing');
 }
 
-function render(){renderCards();renderNav();}
+function render(){renderCards();renderNav();saveLinks();}
 
 navEditBtn.onclick=()=>{if(isLocked)return;isEditing=!isEditing;if(isEditing)goHome();render();};
 navLockBtn.onclick=()=>{isLocked=!isLocked;if(isLocked)isEditing=false;render();};
@@ -346,6 +356,14 @@ document.getElementById('btnConfirm').onclick=()=>{
   render();
 };
 inputUrl.onkeydown=e=>{if(e.key==='Enter')document.getElementById('btnConfirm').click();};
+
+// 저장된 패널 위치 복원
+const savedPos = JSON.parse(localStorage.getItem('lp_pos')||'null');
+if(savedPos){
+  navWrap.style.right='auto';
+  navWrap.style.left=savedPos.x+'px';
+  navWrap.style.top=savedPos.y+'px';
+}
 
 render();
 </script>
